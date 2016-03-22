@@ -1,6 +1,4 @@
 - hosts: all
-  remote_user: centos
   sudo: yes
   tasks:
-    - shell: firewall-cmd --reload
     - hostname: name={{server_name}}

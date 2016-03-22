@@ -1,3 +1,15 @@
+[workstations]
+52.37.231.190   server_name=ip-172-31-6-141.us-west-2.compute.internal  initial_ssh_pass=PASSWORD
+
+[masters]
+52.37.232.197
+52.36.131.94
+52.37.60.59
+
+[agents]
+52.25.51.49
+52.37.228.43
+52.37.221.107
 
 [common:children]
 workstations
@@ -5,38 +17,11 @@ masters
 agents
 
 [common:vars]
-workstation_ip=185.48.117.225
+workstation_ip=172.31.32.199
+
 
 # For remote access the DCOS Dashboard specify the IP of your computer/lan
-admin_ip=212.53.142.20
-
-# options: aws_s3, zookeeper
-exhibitor=zookeeper
-
-# if aws_s3 is used:
-aws_s3_access_key_id=ACCESSKEYID
-aws_s3_secret_access_key=SECRETACCESSKEY
-
-# options: aws, profitbricks
-provider=profitbricks
-
-# options: aws=169.254.169.253, profitbricks=185.48.118.6
-resolvers=[\"185.48.118.6\"]
+admin_ip=217.110.123.251
 
 # public key for ssh access
 normal_ssh_key = "/Users/jan/.ssh/cloud_test.pub"
-
-[workstations]
-185.48.117.225   server_name=ip185-48-117-225.pbiaas.com   initial_ssh_pass=PASSWORD
-
-[masters]
-185.48.117.225   server_name=ip185-48-117-225.pbiaas.com    initial_ssh_pass=PASSWORD
-
-[agents]
-85.184.251.104     server_name=ip85-184-251-104.pbiaas.com     initial_ssh_pass=PASSWORD
-85.184.251.136    server_name=ip85-184-251-136.pbiaas.com    initial_ssh_pass=PASSWORD
-85.184.251.83     server_name=ip85-184-251-83.pbiaas.com     initial_ssh_pass=PASSWORD
-85.184.251.135     server_name=ip85-184-251-135.pbiaas.com     initial_ssh_pass=PASSWORD
-85.184.251.48     server_name=ip85-184-251-48.pbiaas.com    initial_ssh_pass=PASSWORD
-85.184.251.70     server_name=ip85-184-251-70.pbiaas.com     initial_ssh_pass=PASSWORD
-85.184.251.102     server_name=ip85-184-251-102.pbiaas.com    initial_ssh_pass=PASSWORD

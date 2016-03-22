@@ -1,0 +1,14 @@
+- hosts: masters:agents
+  gather_facts: false
+  remote_user: centos
+  sudo: yes
+  tasks:
+
+    # DCOS environmemt
+    - lineinfile: dest=/opt/mesosphere/environment regexp=^HTTP_PROXY line=HTTP_PROXY=http://proxy:8080
+    - lineinfile: dest=/opt/mesosphere/environment regexp=^HTTPS_PROXY line=HTTPS_PROXY=http://proxy:8080
+    - lineinfile: dest=/opt/mesosphere/environment regexp=^NO_PROXY line=NO_PROXY=\"localhost,127.0.0.1,172.31.32.199,172.31.32.196,172.31.32.195,172.31.32.198,172.31.32.197,172.31.32.194,172.31.32.193,.company.corp,.mesos\"
+
+    # Docker environmemt
+    - file: path=/etc/systemd/system/docker.service.d/ state=directory mode=0755
+    - template: src=templates/proxy.j2 dest=/etc/systemd/system/docker.service.d/http_proxy.conf mode=0644
