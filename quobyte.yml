@@ -1,0 +1,11 @@
+- hosts: agents
+  gather_facts: false
+  remote_user: core
+  sudo: yes
+  vars:
+    quobyte_master: "https://github.com/quobyte/quobyte-deploy/archive/master.zip"
+    quobyte_image: "https://support.quobyte.com/repo/2/1b64d5c5cf3f6df7fd654bba915a7800/quobyte-docker/quobyte-server-image_1.2.6.tar.bzip2"
+  tasks:
+    - file: path=/tmp/quobyte state=directory mode=0755
+    - get_url: url="{{ quobyte_master }}" dest=/tmp/quobyte/master.zip mode=0440
+    - unarchive: src=master.zip dest=/tmp/quobyte/
