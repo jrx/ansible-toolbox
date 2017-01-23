@@ -29,7 +29,7 @@
     - shell: mkfs -t ext4 /dev/loop0
       ignore_errors: true
 
-    - lineinfile: dest=/etc/fstab regexp=^/root/volume0 line='/root/volume0.img /dcos/volume0 auto loop 0 2'
+    - shell: sudo sh -c 'echo "/root/volume0.img /dcos/volume0 auto loop 0 2" | tee -a /etc/fstab' 
 
     - shell: mount /dcos/volume0
       ignore_errors: true

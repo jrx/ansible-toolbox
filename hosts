@@ -1,15 +1,15 @@
 [workstations]
-52.37.231.190   server_name=ip-172-31-6-141.us-west-2.compute.internal  initial_ssh_pass=PASSWORD
+35.164.103.169
 
 [masters]
-52.37.232.197
-52.36.131.94
-52.37.60.59
+35.163.128.242
 
 [agents]
-52.25.51.49
-52.37.228.43
-52.37.221.107
+35.163.211.52
+35.161.7.178
+35.161.246.193
+35.160.20.104
+35.161.111.190
 
 [common:children]
 workstations
@@ -17,7 +17,7 @@ masters
 agents
 
 [common:vars]
-workstation_ip=172.31.32.199
+workstation_ip=172.31.44.115
 
 
 # For remote access the DCOS Dashboard specify the IP of your computer/lan
