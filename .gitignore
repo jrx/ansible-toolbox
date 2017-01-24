@@ -1,0 +1,20 @@
+# common
+.DS_Store
+
+# ansible
+hosts
+group_vars/all
+*.retry
+/tmp
+
+# vagrant
+.vagrant
+
+# terraform
+/*.tf
+*.tfstate
+*.tfstate.backup
+terraform.tfvars
+
+# terraform gce
+/account.json

@@ -1,0 +1,97 @@
+- hosts: workstations:agents
+  remote_user: centos
+  sudo: yes
+  tasks:
+
+    # Disable SELinux
+    - name: disable selinux
+      selinux: policy=targeted state=permissive
+
+    # Download Ambari Repository
+    - name: download repo
+      get_url: url="http://public-repo-1.hortonworks.com/ambari/centos7/2.x/updates/2.2.0.0/ambari.repo" dest=/etc/yum.repos.d/ambari.repo mode=0640
+
+    # Install java-1.8 and ambari
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - java-1.8.0-openjdk
+        - java-1.8.0-openjdk-devel
+        - ambari-agent
+        - deltarpm
+        - ntp
+
+    # start ntp
+    - name: enable ntpd
+      service:
+        name: ntpd
+        enabled: yes
+        state: started
+
+- hosts: workstations
+  remote_user: centos
+  sudo: yes
+  tasks:
+
+
+    # Install ambari-server
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - ambari-server
+
+    # bootstrap ambari-server
+    - name: bootstrap ambari-server
+      shell: ambari-server setup -s --java-home=/usr/lib/jvm/jre/
+
+    # start ambari-server
+    - name: enable ambari-server
+      service:
+        name: ambari-server
+        enabled: yes
+        state: started
+
+- hosts: agents
+  remote_user: centos
+  sudo: yes
+  tasks:
+
+    # Install ambari-agent
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - ambari-agent
+
+    # replace localhost in node1
+    - name: configure workstation ip at the agent configuration
+      lineinfile:
+        dest: /etc/ambari-agent/conf/ambari-agent.ini
+        regexp: '^hostname='
+        line: "hostname={{ workstation_ip }}"
+
+    # start ambari-agent
+    - name: enable ambari-agent
+      service:
+        name: ambari-agent
+        enabled: yes
+        state: started
+
+    # jps fix
+    - name: create symlinks for jps
+      file:
+        src: /usr/bin/jps
+        dest: /usr/lib/jvm/jre//bin/jps
+        state: link
+
+    # jar fix
+    - name: create symlinks for jar
+      file:
+        src: /usr/bin/jar
+        dest: /usr/lib/jvm/jre/bin/jar
+        state: link

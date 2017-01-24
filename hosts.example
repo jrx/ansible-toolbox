@@ -1,13 +1,13 @@
 [workstations]
-35.157.18.100
+35.156.251.201
 
 [masters]
-35.157.76.234
+35.157.60.209
 
 [agents]
-35.157.38.193
-35.156.132.212
-35.156.159.231
+35.157.59.17
+35.157.55.236
+35.157.82.238
 
 [common:children]
 workstations
@@ -15,7 +15,7 @@ masters
 agents
 
 [common:vars]
-workstation_ip=172.31.172.129
+workstation_ip=172.31.103.215
 
 
 # For remote access the DCOS Dashboard specify the IP of your computer/lan
