@@ -1,0 +1,74 @@
+- name: install nvidia drivers
+  hosts: agents
+  become: true
+
+  vars:
+    cuda_download: https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda-repo-rhel7-8-0-local-ga2-8.0.61-1.x86_64-rpm
+    driver_download: http://us.download.nvidia.com/XFree86/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run
+
+  tasks:
+
+    - name: update all packages
+      yum:
+        name: "*"
+        state: latest
+        exclude: docker-engine
+
+    - name: make sure epel-release is installed
+      yum:
+        name: epel-release
+        state: present
+
+    - name: install required system packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - kernel-devel
+        - kernel-headers
+        - gcc
+        - make
+        - dkms
+
+    - name: disable nouveau driver
+      template: src=templates/disable-nouveau.conf.j2 dest=/etc/modprobe.d/disable-nouveau.conf mode=0644
+
+    - name: reboot
+      shell: sleep 2 && shutdown -r now "ansible triggered"
+      async: 1
+      poll: 0
+      ignore_errors: true
+
+    - name: wait for the server to reboot
+      local_action: wait_for host="{{ansible_host}}" state=started delay=30 timeout=300
+      become: false
+
+    - name: download cuda repo file
+      get_url: url="{{ cuda_download }}" dest=/tmp/cuda-repo.rpm mode=0440 force=yes
+
+    - name: install cuda repo rpm from a local file
+      yum:
+        name: /tmp/cuda-repo.rpm
+        state: present
+
+    - name: install cuda
+      yum:
+        name: cuda
+        update_cache: yes
+        state: latest
+
+    - name: load cuda libs
+      template: src=templates/cuda-lib64.conf.j2 dest=/etc/ld.so.conf.d/cuda-lib64.conf mode=0644
+
+    - name: ldconfig
+      shell: ldconfig
+
+    - name: download nvidia driver
+      get_url: url="{{ driver_download }}" dest=/tmp/nvidia-driver.run mode=0740 force=yes
+
+    - name: install nvidia driver
+      shell: /tmp/nvidia-driver.run --silent  --install-libglvnd
+      ignore_errors: true
+
+    - name: test nvidia driver
+      shell: nvidia-smi

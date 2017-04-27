@@ -1,25 +1,18 @@
-[workstations]
-35.156.251.201
+[bootstraps]
+1.0.0.1
 
 [masters]
-35.157.60.209
+1.0.0.2
 
 [agents]
-35.157.59.17
-35.157.55.236
-35.157.82.238
+1.0.0.3
+1.0.0.4
+
+[agents_public]
+1.0.0.5
 
 [common:children]
-workstations
+bootstraps
 masters
 agents
-
-[common:vars]
-workstation_ip=172.31.103.215
-
-
-# For remote access the DCOS Dashboard specify the IP of your computer/lan
-admin_ip=217.110.123.251
-
-# public key for ssh access
-normal_ssh_key = "/Users/jan/.ssh/cloud_test.pub"
+agents_public
