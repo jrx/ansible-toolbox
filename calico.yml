@@ -1,0 +1,53 @@
+- hosts: bootstraps
+  remote_user: centos
+  sudo: yes
+  vars:
+    etcd_ip: 172.31.0.62
+    etcd_port: 2379
+
+  tasks:
+
+  - name: start etcd
+    docker_container:
+      name: etcd
+      network_mode: host
+      image: quay.io/coreos/etcd:v3.1.10
+      command: etcd --advertise-client-urls "http://{{ etcd_ip }}:{{ etcd_port }}" --listen-client-urls "http://{{ etcd_ip }}:{{ etcd_port }},http://127.0.0.1:{{ etcd_port }}"
+      state: started
+      recreate: yes
+      restart: yes
+
+- hosts: agents:agents_public
+  remote_user: centos
+  sudo: yes
+  vars:
+    etcd_ip: 172.31.0.62
+    etcd_port: 2379
+
+  tasks:
+
+  - name: start calico-node
+    shell: sudo docker rm /calico-node -f | true && sudo docker run -d --restart=always --net=host --privileged --name=calico-node -e FELIX_IGNORELOOSERPF=true -v /lib/modules:/lib/modules -v /var/log/calico:/var/log/calico -v /var/run/calico:/var/run/calico -v /run/docker/plugins:/run/docker/plugins -v /var/run/docker.sock:/var/run/docker.sock -e CALICO_LIBNETWORK_ENABLED=true -e IP=$(/opt/mesosphere/bin/detect_ip) -e HOSTNAME=$(hostname) -e ETCD_ENDPOINTS=http://{{ etcd_ip }}:{{ etcd_port }} -e ETCD_SCHEME=http quay.io/calico/node:v2.6.2
+
+  - name: download calico
+    get_url: url="https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico" dest=/opt/mesosphere/active/cni/calico mode=0755 force=yes
+
+  - name: download calico-ipam
+    get_url: url="https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico-ipam" dest=/opt/mesosphere/active/cni/calico-ipam mode=0755 force=yes
+
+  - name: configure calico
+    template: src=templates/calico.cni.j2 dest=/opt/mesosphere/etc/dcos/network/cni/calico.cni mode=0644
+
+  - name: restart agent
+    service:
+      name: dcos-mesos-slave
+      state: restarted
+    when: "'agents' in group_names"
+    ignore_errors: true
+
+  - name: restart agent_public
+    service:
+      name: dcos-mesos-slave-public
+      state: restarted
+    when: "'agents_public' in group_names"
+    ignore_errors: true
