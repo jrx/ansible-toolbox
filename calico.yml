@@ -2,7 +2,7 @@
   remote_user: centos
   sudo: yes
   vars:
-    etcd_ip: 172.31.0.62
+    etcd_ip: "{{ bootstrap_ip }}"
     etcd_port: 2379
 
   tasks:
@@ -15,13 +15,16 @@
       command: etcd --advertise-client-urls "http://{{ etcd_ip }}:{{ etcd_port }}" --listen-client-urls "http://{{ etcd_ip }}:{{ etcd_port }},http://127.0.0.1:{{ etcd_port }}"
       state: started
       recreate: yes
-      restart: yes
+      restart: no
 
-- hosts: agents:agents_public
+  - name: download calicoctl
+    get_url: url="https://github.com/projectcalico/calicoctl/releases/download/v1.6.1/calicoctl" dest=/usr/bin/calicoctl mode=0755 force=yes
+
+- hosts: agents:agents_public:masters
   remote_user: centos
   sudo: yes
   vars:
-    etcd_ip: 172.31.0.62
+    etcd_ip: "{{ bootstrap_ip }}"
     etcd_port: 2379
 
   tasks:
@@ -31,12 +34,15 @@
 
   - name: download calico
     get_url: url="https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico" dest=/opt/mesosphere/active/cni/calico mode=0755 force=yes
+    when: "'masters' not in group_names"
 
   - name: download calico-ipam
     get_url: url="https://github.com/projectcalico/cni-plugin/releases/download/v1.5.5/calico-ipam" dest=/opt/mesosphere/active/cni/calico-ipam mode=0755 force=yes
+    when: "'masters' not in group_names"
 
   - name: configure calico
     template: src=templates/calico.cni.j2 dest=/opt/mesosphere/etc/dcos/network/cni/calico.cni mode=0644
+    when: "'masters' not in group_names"
 
   - name: restart agent
     service:
@@ -51,3 +57,7 @@
       state: restarted
     when: "'agents_public' in group_names"
     ignore_errors: true
+
+  - name: restart navstar
+    service:
+      name: dcos-navstar
