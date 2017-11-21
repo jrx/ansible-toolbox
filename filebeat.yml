@@ -1,0 +1,58 @@
+- hosts: agents:agents_public:masters
+  remote_user: centos
+  become: true
+  vars:
+    elastic_hostname: "master.elastic.l4lb.thisdcos.directory"
+    elastic_port: 9200
+    kibana_hostname: "web.kibana.marathon.l4lb.thisdcos.directory"
+    kibana_port: 80
+
+  tasks:
+
+  - name: install filebeat
+    yum:
+      name: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.0.0-x86_64.rpm
+      state: present
+
+  - name: create dcos log directory
+    file: path=/var/log/dcos state=directory mode=0744
+
+  - name: configure filebeat
+    template: src=templates/filebeat.yml.j2 dest=/etc/filebeat/filebeat.yml mode=0644
+
+  - name: configure filebeat systemd service
+    template: src=templates/dcos-journalctl-filebeat.service.j2 dest=/etc/systemd/system/dcos-journalctl-filebeat.service mode=0755
+
+  - name: configure clear logs systemd service
+    template: src=templates/dcos-clear-logs.service.j2 dest=/etc/systemd/system/dcos-clear-logs.service mode=0755
+
+  - name: configure clear logs systemd timer
+    template: src=templates/dcos-clear-logs.timer.j2 dest=/etc/systemd/system/dcos-clear-logs.timer mode=0755
+
+  - name: start dcos-journalctl-filebeat.service
+    systemd:
+      name: dcos-journalctl-filebeat.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+
+  - name: start dcos-clear-logs.service
+    systemd:
+      name: dcos-clear-logs.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+
+  - name: start dcos-clear-logs.timer
+    systemd:
+      name: dcos-clear-logs.timer
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+
+  - name: start filebeat
+    systemd:
+      name: filebeat
+      state: restarted
+      enabled: yes
+      daemon_reload: yes

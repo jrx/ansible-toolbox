@@ -1,0 +1,13 @@
+[Unit]
+Description=DC/OS journalctl to filebeat service
+Wants=filebeat.service
+After=filebeat.service
+
+[Service]
+Restart=always
+RestartSec=5
+
+ExecStart=/bin/sh -c 'trap "exit" INT TERM ERR; trap "kill 0" EXIT; for f in $(ls /etc/systemd/system/|grep dcos); do journalctl --since="1 minutes ago" --no-tail -f -u $f > /var/log/dcos/$f.log & 2>&1; done; wait'
+
+[Install]
+WantedBy=multi-user.target

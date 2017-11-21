@@ -1,0 +1,9 @@
+[Unit]
+Description=Clear DC/OS Logs Timer
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timer.target
