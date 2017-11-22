@@ -7,7 +7,7 @@ After=filebeat.service
 Restart=always
 RestartSec=5
 
-ExecStart=/bin/sh -c 'trap "exit" INT TERM ERR; trap "kill 0" EXIT; for f in $(ls /etc/systemd/system/|grep dcos); do journalctl --since="1 minutes ago" --no-tail -f -u $f > /var/log/dcos/$f.log & 2>&1; done; wait'
+ExecStart=/bin/sh -c 'trap "exit" INT TERM ERR; trap "kill 0" EXIT; for f in $(systemctl list-unit-files --no-legend --no-pager --plain --state=enabled --type=service "dcos*" | awk \'{print $1}\'); do journalctl --since="1 minutes ago" --no-tail --follow --unit=$f > /var/log/dcos/$f.log & 2>&1; done; wait'
 
 [Install]
 WantedBy=multi-user.target
