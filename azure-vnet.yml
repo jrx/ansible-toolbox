@@ -1,0 +1,45 @@
+- hosts: agents:agents_public:masters
+  remote_user: core
+  sudo: yes
+
+  tasks:
+
+  - name: install required system packages
+    yum:
+      name: "{{ item }}"
+      state: latest
+    with_items:
+      - ebtables
+    when: "'masters' not in group_names"
+
+  - name: download azure cni
+    unarchive:
+      src: https://github.com/Azure/azure-container-networking/releases/download/v0.91/azure-vnet-cni-linux-amd64-v0.91.tgz
+      dest: /opt/mesosphere/active/cni/
+      remote_src: yes
+    when: "'masters' not in group_names"
+
+  - name: configure azure cni
+    template: src=templates/azure-vnet.cni.j2 dest=/opt/mesosphere/etc/dcos/network/cni/azure-vnet.cni mode=0644
+    when: "'masters' not in group_names"
+
+  - file: path=/var/log/azure-vnet.log state=absent
+  - file: path=/var/log/azure-vnet-ipam.log state=absent
+
+  - name: restart agent
+    service:
+      name: dcos-mesos-slave
+      state: restarted
+    when: "'agents' in group_names"
+    ignore_errors: true
+
+  - name: restart agent_public
+    service:
+      name: dcos-mesos-slave-public
+      state: restarted
+    when: "'agents_public' in group_names"
+    ignore_errors: true
+
+  - name: restart navstar
+    service:
+      name: dcos-navstar
