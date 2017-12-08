@@ -23,29 +23,26 @@
   - name: configure filebeat systemd service
     template: src=templates/dcos-journalctl-filebeat.service.j2 dest=/etc/systemd/system/dcos-journalctl-filebeat.service mode=0755
 
-  - name: configure clear logs systemd service
-    template: src=templates/dcos-clear-logs.service.j2 dest=/etc/systemd/system/dcos-clear-logs.service mode=0755
-
-  - name: configure clear logs systemd timer
-    template: src=templates/dcos-clear-logs.timer.j2 dest=/etc/systemd/system/dcos-clear-logs.timer mode=0755
+  - name: configure logrotation
+    blockinfile:
+      dest: "{{ item }}"
+      state: present
+      create: yes
+      block: |
+        /var/log/dcos/dcos.log {
+          size 1M
+          copytruncate
+          rotate 5
+          compress
+          compresscmd /bin/xz
+        }
+    with_items:
+      - /opt/mesosphere/etc/logrotate_master.config
+      - /opt/mesosphere/etc/logrotate_agent.config
 
   - name: start dcos-journalctl-filebeat.service
     systemd:
       name: dcos-journalctl-filebeat.service
-      state: restarted
-      enabled: yes
-      daemon_reload: yes
-
-  - name: start dcos-clear-logs.service
-    systemd:
-      name: dcos-clear-logs.service
-      state: restarted
-      enabled: yes
-      daemon_reload: yes
-
-  - name: start dcos-clear-logs.timer
-    systemd:
-      name: dcos-clear-logs.timer
       state: restarted
       enabled: yes
       daemon_reload: yes
@@ -56,3 +53,19 @@
       state: restarted
       enabled: yes
       daemon_reload: yes
+
+  - name: restart dcos-logrotate-master.service
+    systemd:
+      name: dcos-logrotate-master.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+    when: "'masters' in group_names"
+
+  - name: restart dcos-logrotate-agent.service
+    systemd:
+      name: dcos-logrotate-agent.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+    when: "'masters' not in group_names"

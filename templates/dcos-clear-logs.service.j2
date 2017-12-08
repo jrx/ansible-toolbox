@@ -1,6 +1,0 @@
-[Unit]
-Description=Clear DC/OS Logs Service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/systemctl try-restart dcos-journalctl-filebeat.service
