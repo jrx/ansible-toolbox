@@ -1,11 +1,29 @@
-- hosts: bootstraps
+- hosts: masters
   remote_user: centos
   sudo: yes
   vars:
-    etcd_ip: "{{ bootstrap_ip }}"
+    etcd_ip: "master.mesos"
     etcd_port: 2379
 
   tasks:
+
+  - name: make sure docker-python is not installed via yum
+    yum:
+      name: docker-python
+      state: absent
+
+  - name: make sure epel-release is installed
+    yum:
+      name: epel-release
+      state: present
+
+  - name: make sure pip is installed
+    yum:
+      name: python-pip
+      state: present
+
+  - name: make sure docker-py is installed via pip
+    pip: name="docker-py==1.10.6" state=present
 
   - name: start etcd
     docker_container:
@@ -24,7 +42,7 @@
   remote_user: centos
   sudo: yes
   vars:
-    etcd_ip: "{{ bootstrap_ip }}"
+    etcd_ip: "master.mesos"
     etcd_port: 2379
 
   tasks:
