@@ -1,0 +1,65 @@
+- hosts: masters
+  remote_user: centos
+  become: yes
+
+  tasks:
+
+  - name: download local-universe-http.service
+    get_url: url="https://raw.githubusercontent.com/mesosphere/universe/version-3.x/docker/local-universe/dcos-local-universe-http.service" dest=/etc/systemd/system/dcos-local-universe-http.service mode=0755 force=yes
+
+  - name: download dcos-local-universe-registry.service
+    get_url: url="https://raw.githubusercontent.com/mesosphere/universe/version-3.x/docker/local-universe/dcos-local-universe-registry.service" dest=/etc/systemd/system/dcos-local-universe-registry.service mode=0755 force=yes
+
+  - name: restart dcos-local-universe-http.service
+    systemd:
+      name: dcos-local-universe-http.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+
+  - name: restart dcos-local-universe-registry.service
+    systemd:
+      name: dcos-local-universe-registry.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+
+- hosts: agents:agents_public
+  remote_user: centos
+  become: yes
+
+  tasks:
+
+  - name: create /etc/docker/certs.d/master.mesos:5000
+    file: path=/etc/docker/certs.d/master.mesos:5000 state=directory mode=0744
+
+  - name: create /var/lib/dcos/pki/tls/certs/
+    file: path=/var/lib/dcos/pki/tls/certs/ state=directory mode=0744
+
+  - name: download local-universe-http.service
+    get_url: url="http://master.mesos:8082/certs/domain.crt" dest=/etc/docker/certs.d/master.mesos:5000/ca.crt mode=0755 force=yes
+
+  - name: download local-universe-http.service
+    get_url: url="http://master.mesos:8082/certs/domain.crt" dest=/var/lib/dcos/pki/tls/certs/docker-registry-ca.crt mode=0755 force=yes
+
+  - shell: openssl x509 -hash -noout -in docker-registry-ca.crt
+    args:
+      chdir: /var/lib/dcos/pki/tls/certs/
+
+  - name: get cert id
+    shell: "openssl x509 -hash -noout -in docker-registry-ca.crt"
+    args:
+      chdir: /var/lib/dcos/pki/tls/certs/
+    register: cert_id
+
+  - file:
+      src: /var/lib/dcos/pki/tls/certs/docker-registry-ca.crt
+      dest: "/var/lib/dcos/pki/tls/certs/{{ cert_id.stdout }}.0"
+      state: link
+
+  - name: restart docker.service
+    systemd:
+      name: docker.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
