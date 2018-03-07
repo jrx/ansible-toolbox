@@ -1,0 +1,65 @@
+# - hosts: masters
+#   remote_user: centos
+#   sudo: yes
+#
+#   tasks:
+#
+#   - name: configure-flannel
+#     docker_container:
+#       name: configure-flannel
+#       network_mode: host
+#       image: quay.io/coreos/etcd:v3.1.10
+#       command: 'etcdctl set /coreos.com/network/config \\'\{ \"Network\": \"192.168.0.0/16\", \"Backend\": \{\"Type\": \"vxlan\"\}\}\\''
+#       state: started
+#       recreate: yes
+#       restart: no
+
+- hosts: agents:agents_public:masters
+  remote_user: centos
+  sudo: yes
+  vars:
+    etcd_ip: "master.mesos"
+    etcd_port: 2379
+
+  tasks:
+
+  - name: download flanneld
+    get_url: url="https://github.com/coreos/flannel/releases/download/v0.8.0/flanneld-amd64" dest=/usr/bin/flanneld-amd64 mode=0755 force=yes
+
+  - name: configure flanneld systemd service
+    template: src=templates/flanneld.service.j2 dest=/etc/systemd/system/flanneld.service mode=0755
+
+  - name: start flanneld
+    systemd:
+      name: flanneld
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+
+  - name: detect flannel subnet
+    shell: source /run/flannel/subnet.env && echo $FLANNEL_SUBNET
+    register: source_flannel
+
+  - set_fact:
+      flannel_subnet: "{{ source_flannel.stdout }}"
+
+  - name: start calico-node
+    shell: docker rm /calico-node -f | true && sudo docker run -d --restart=always --net=host --privileged --name=calico-node -e FELIX_IGNORELOOSERPF=true -e CALICO_NETWORKING_BACKEND=none -v /lib/modules:/lib/modules -v /var/log/calico:/var/log/calico -v /var/run/calico:/var/run/calico -v /run/docker/plugins:/run/docker/plugins -v /var/run/docker.sock:/var/run/docker.sock -e CALICO_LIBNETWORK_ENABLED=true -e IP=$(/opt/mesosphere/bin/detect_ip) -e HOSTNAME=$(hostname) -e ETCD_ENDPOINTS=http://{{ etcd_ip }}:{{ etcd_port }} -e ETCD_SCHEME=http quay.io/calico/node:v2.6.2
+
+  - name: configure canal
+    template: src=templates/canal.cni.j2 dest=/opt/mesosphere/etc/dcos/network/cni/calico.cni mode=0644
+    when: "'masters' not in group_names"
+
+  - name: restart agent
+    service:
+      name: dcos-mesos-slave
+      state: restarted
+    when: "'agents' in group_names"
+    ignore_errors: true
+
+  - name: restart agent_public
+    service:
+      name: dcos-mesos-slave-public
+      state: restarted
+    when: "'agents_public' in group_names"
+    ignore_errors: true

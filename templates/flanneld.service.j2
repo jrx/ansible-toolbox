@@ -1,0 +1,12 @@
+[Unit]
+ Description=Flannel: A simple and easy way to configure a layer 3 network fabric
+ After=network.target  
+
+[Service] 
+Restart=always
+ StartLimitInterval=0 
+RestartSec=5 
+LimitNOFILE=16384
+ WorkingDirectory=/usr/bin/
+
+ ExecStart=/usr/bin/flanneld-amd64 -ip-masq -etcd-endpoints http://{{ etcd_ip }}:{{ etcd_port }}

@@ -1,0 +1,12 @@
+{
+  "name": "canal",
+  "type": "flannel",
+  "delegate": {
+    "type": "calico",
+    "etcd_endpoints": "http://{{ etcd_ip }}:{{ etcd_port }}"
+ },
+ "ipam": {
+    "type": "host-local",
+    "subnet": "{{ flannel_subnet }}" 
+ }
+}
