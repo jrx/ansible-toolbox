@@ -14,7 +14,7 @@
 #       recreate: yes
 #       restart: no
 
-- hosts: agents:agents_public:masters
+- hosts: agents:agent_publics:masters
   remote_user: centos
   sudo: yes
   vars:
@@ -43,8 +43,15 @@
   - set_fact:
       flannel_subnet: "{{ source_flannel.stdout }}"
 
+  - name: detect host ip
+    shell: /opt/mesosphere/bin/detect_ip
+    register: source_host_ip
+
+  - set_fact:
+      host_ip: "{{ source_host_ip.stdout }}"
+
   - name: start calico-node
-    shell: docker rm /calico-node -f | true && sudo docker run -d --restart=always --net=host --privileged --name=calico-node -e FELIX_IGNORELOOSERPF=true -e CALICO_NETWORKING_BACKEND=none -v /lib/modules:/lib/modules -v /var/log/calico:/var/log/calico -v /var/run/calico:/var/run/calico -v /run/docker/plugins:/run/docker/plugins -v /var/run/docker.sock:/var/run/docker.sock -e CALICO_LIBNETWORK_ENABLED=true -e IP=$(/opt/mesosphere/bin/detect_ip) -e HOSTNAME=$(hostname) -e ETCD_ENDPOINTS=http://{{ etcd_ip }}:{{ etcd_port }} -e ETCD_SCHEME=http quay.io/calico/node:v2.6.2
+    shell: docker rm /calico-node -f | true && sudo docker run -d --restart=always --net=host --privileged --name=calico-node -e CLUSTER_TYPE=mesos,canal -e FELIX_IGNORELOOSERPF=true -e CALICO_NETWORKING_BACKEND=none -v /lib/modules:/lib/modules -v /var/log/calico:/var/log/calico -v /var/run/calico:/var/run/calico -v /run/docker/plugins:/run/docker/plugins -v /var/run/docker.sock:/var/run/docker.sock -e CALICO_LIBNETWORK_ENABLED=true -e IP=$(/opt/mesosphere/bin/detect_ip) -e HOSTNAME=$(hostname) -e ETCD_ENDPOINTS=http://{{ etcd_ip }}:{{ etcd_port }} -e ETCD_SCHEME=http quay.io/calico/node:v2.6.2
 
   - name: configure canal
     template: src=templates/canal.cni.j2 dest=/opt/mesosphere/etc/dcos/network/cni/calico.cni mode=0644
@@ -61,5 +68,5 @@
     service:
       name: dcos-mesos-slave-public
       state: restarted
-    when: "'agents_public' in group_names"
+    when: "'agent_publics' in group_names"
     ignore_errors: true

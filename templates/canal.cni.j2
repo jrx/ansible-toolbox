@@ -1,9 +1,10 @@
 {
-  "name": "canal",
+  "name": "calico",
   "type": "flannel",
   "delegate": {
     "type": "calico",
-    "etcd_endpoints": "http://{{ etcd_ip }}:{{ etcd_port }}"
+    "etcd_endpoints": "http://{{ etcd_ip }}:{{ etcd_port }}",
+    "nodename": "{{ host_ip }}"
  },
  "ipam": {
     "type": "host-local",
