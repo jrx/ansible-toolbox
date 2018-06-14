@@ -24,7 +24,7 @@
       enabled: yes
       daemon_reload: yes
 
-- hosts: agents:agents_public
+- hosts: agents:agent_publics
   remote_user: centos
   become: yes
 
@@ -36,10 +36,10 @@
   - name: create /var/lib/dcos/pki/tls/certs/
     file: path=/var/lib/dcos/pki/tls/certs/ state=directory mode=0744
 
-  - name: download local-universe-http.service
+  - name: download certificate for docker daemon
     get_url: url="http://master.mesos:8082/certs/domain.crt" dest=/etc/docker/certs.d/master.mesos:5000/ca.crt mode=0755 force=yes
 
-  - name: download local-universe-http.service
+  - name: download certificate for ucr
     get_url: url="http://master.mesos:8082/certs/domain.crt" dest=/var/lib/dcos/pki/tls/certs/docker-registry-ca.crt mode=0755 force=yes
 
   - shell: openssl x509 -hash -noout -in docker-registry-ca.crt
