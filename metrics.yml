@@ -1,0 +1,40 @@
+- hosts: agents:agent_publics:masters
+  remote_user: centos
+  sudo: yes
+
+  tasks:
+
+  - name: stop dcos-metrics-prometheus.service
+    systemd:
+      name: dcos-metrics-prometheus.service
+      state: stopped
+      enabled: no
+      daemon_reload: yes
+    ignore_errors: true
+
+  - name: download dcos-metrics
+    get_url: url="https://downloads.mesosphere.io/dcos-metrics/patches/f7ce9e5a5a8ac4412096c053b9114ffac07a134c/dcos-metrics" dest=/opt/mesosphere/packages/dcos-metrics--90938af51ad7ae7f5a9515005cda4596a2537339/bin/dcos-metrics mode=0755 force=yes
+
+  - name: download dcos-metrics config
+    get_url: url="https://downloads.mesosphere.io/dcos-metrics/patches/f7ce9e5a5a8ac4412096c053b9114ffac07a134c/dcos-metrics-config-ee.yaml" dest=/opt/mesosphere/etc/dcos-metrics-config-ee.yaml mode=0755 force=yes
+
+  - name: restart dcos-metrics-master
+    service:
+      name: dcos-metrics-master
+      state: restarted
+    when: "'masters' in group_names"
+    ignore_errors: true
+
+  - name: restartdcos-metrics-agent
+    service:
+      name: dcos-metrics-agent
+      state: restarted
+    when: "'agents' in group_names"
+    ignore_errors: true
+
+  - name: restart dcos-metrics-agent
+    service:
+      name: dcos-metrics-agent
+      state: restarted
+    when: "'agent_publics' in group_names"
+    ignore_errors: true
