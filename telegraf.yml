@@ -1,0 +1,83 @@
+
+- hosts: masters
+  remote_user: centos
+  become: true
+
+  tasks:
+
+  - name: configure telegraf for mesos masters
+    blockinfile:
+      dest: "/opt/mesosphere/etc/telegraf/telegraf.d/mesos-master.conf"
+      state: present
+      create: yes
+      block: |
+        # Telegraf plugin for gathering metrics from N Mesos masters
+        [[inputs.mesos]]
+          ## Timeout, in ms.
+          timeout = 100
+          ## A list of Mesos masters.
+          masters = ["http://$DCOS_NODE_PRIVATE_IP:5050"]
+          ## Master metrics groups to be collected, by default, all enabled.
+          master_collections = [
+            "resources",
+            "master",
+            "system",
+            "agents",
+            "frameworks",
+            "framework_offers",
+            "tasks",
+            "messages",
+            "evqueue",
+            "registrar",
+            "allocator",
+          ]
+        ## Use TLS but skip chain & host verification
+        insecure_skip_verify = false
+        ## Optional IAM configuration (DCOS)
+        # ca_certificate_path = "/run/dcos/pki/CA/ca-bundle.crt"
+        # iam_config_path = "/run/dcos/etc/telegraf/master_service_account.json"
+
+  - name: restart dcos-telegraf.service for mesos masters
+    systemd:
+      name: dcos-telegraf.service
+      state: restarted
+      enabled: yes
+
+- hosts: agents,agent_publics
+  remote_user: centos
+  become: true
+
+  tasks:
+
+  - name: configure telegraf for mesos agents
+    blockinfile:
+      dest: "/opt/mesosphere/etc/telegraf/telegraf.d/mesos-agent.conf"
+      state: present
+      create: yes
+      block: |
+        # Telegraf plugin for gathering metrics from N Mesos masters
+        [[inputs.mesos]]
+          ## Timeout, in ms.
+          timeout = 100
+        ## A list of Mesos slaves, default is []
+        slaves = ["http://$DCOS_NODE_PRIVATE_IP:5051"]
+        ## Slave metrics groups to be collected, by default, all enabled.
+        slave_collections = [
+          "resources",
+          "agent",
+          "system",
+          "executors",
+          "tasks",
+          "messages",
+        ]
+        ## Use TLS but skip chain & host verification
+        insecure_skip_verify = false
+        ## Optional IAM configuration (DCOS)
+        # ca_certificate_path = "/run/dcos/pki/CA/ca-bundle.crt"
+        # iam_config_path = "/run/dcos/etc/telegraf/master_service_account.json"
+
+  - name: restart dcos-telegraf.service for mesos agents
+    systemd:
+      name: dcos-telegraf.service
+      state: restarted
+      enabled: yes
