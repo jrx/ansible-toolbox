@@ -1,0 +1,56 @@
+- hosts: masters
+  remote_user: centos
+  become: true
+  tasks:
+
+  - name: detect host ip
+    shell: /opt/mesosphere/bin/detect_ip
+    register: source_host_ip
+
+  - set_fact:
+      host_ip: "{{ source_host_ip.stdout }}"
+
+  - name: create directory
+    file:
+      path: /tmp/mesos_exporter/
+      state: directory
+      mode: 0755
+
+  - name: download archive and extract
+    unarchive:
+      src: https://github.com/mesos/mesos_exporter/releases/download/v1.1.1/mesos_exporter-1.1.1.linux-amd64.tar.gz
+      dest: /tmp/
+      remote_src: yes
+
+  - name: Copy binary to /usr/bin/
+    copy:
+      remote_src: True
+      src: /tmp/mesos_exporter-1.1.1.linux-amd64/mesos_exporter
+      dest: /usr/bin/
+      mode: 0755
+
+  - name: configure systemd config
+    blockinfile:
+      dest: "/etc/systemd/system/mesos-exporter.service"
+      state: present
+      create: yes
+      block: |
+        [Unit]
+        Description=DC/OS Mesos Exporter service
+
+        [Service]
+        Restart=always
+        RestartSec=5
+
+        ExecStart=/bin/sh -c '/usr/bin/mesos_exporter -enableMasterState -master http://{{ host_ip }}:5050'
+
+        [Install]
+        WantedBy=multi-user.target
+
+  - name: enable service
+    systemd:
+      name: mesos-exporter.service
+      state: restarted
+      enabled: yes
+      daemon_reload: yes
+

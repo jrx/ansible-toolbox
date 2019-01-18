@@ -1,20 +1,17 @@
-- hosts: agents
+- hosts: agents_private
   remote_user: centos
-  sudo: yes
+  become: yes
   tasks:
 
-    - name: disable dcos-mesos-slave
-      service:
-        name: dcos-mesos-slave
-        state: stopped
+    - shell: systemctl kill -s SIGUSR1 dcos-mesos-slave && systemctl stop dcos-mesos-slave
       ignore_errors: true
 
-    - name: Remove old mesos-resources
-      file: path=/var/lib/dcos/mesos-resources
+    - name: remove old mesos-resources file
+      file: path=/var/lib/dcos/mesos-resources state=absent
       ignore_errors: true
 
-    - name: Remove mesos state
-      file: path=/var/lib/dcos/mesos-resources
+    - name: remove mesos state
+      file: path=/var/lib/mesos/slave/meta/slaves/latest state=absent
       ignore_errors: true
 
     - name: create mount point
@@ -29,7 +26,13 @@
     - shell: mkfs -t ext4 /dev/loop0
       ignore_errors: true
 
+    - shell: losetup -d /dev/loop0
+      ignore_errors: true
+
     - shell: sudo sh -c 'echo "/root/volume0.img /dcos/volume0 auto loop 0 2" | tee -a /etc/fstab'
 
     - shell: mount /dcos/volume0
       ignore_errors: true
+
+    - name: reboot
+      reboot:

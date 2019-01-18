@@ -24,7 +24,7 @@
       enabled: yes
       daemon_reload: yes
 
-- hosts: agents:agent_publics
+- hosts: agents
   remote_user: centos
   become: yes
 

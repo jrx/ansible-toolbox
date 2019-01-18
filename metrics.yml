@@ -13,7 +13,7 @@
     ignore_errors: true
 
   - name: download dcos-metrics
-    get_url: url="https://downloads.mesosphere.io/dcos-metrics/patches/f7ce9e5a5a8ac4412096c053b9114ffac07a134c/dcos-metrics" dest=/opt/mesosphere/packages/dcos-metrics--90938af51ad7ae7f5a9515005cda4596a2537339/bin/dcos-metrics mode=0755 force=yes
+    get_url: url="https://downloads.mesosphere.io/dcos-metrics/patches/f7ce9e5a5a8ac4412096c053b9114ffac07a134c/dcos-metrics" dest=/opt/mesosphere/packages/dcos-metrics--5c90010a3b958ea641bece7b290545f619c9d188/bin/dcos-metrics mode=0755 force=yes
 
   - name: download dcos-metrics config
     get_url: url="https://downloads.mesosphere.io/dcos-metrics/patches/f7ce9e5a5a8ac4412096c053b9114ffac07a134c/dcos-metrics-config-ee.yaml" dest=/opt/mesosphere/etc/dcos-metrics-config-ee.yaml mode=0755 force=yes
